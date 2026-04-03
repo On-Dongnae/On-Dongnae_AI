@@ -1,8 +1,5 @@
-<<<<<<< HEAD
+
 # 🤖 온-동네 (On-Dongnae) - AI Service Worker
-=======
-# ondongnae_ai
->>>>>>> 797ebcce5f1dd4472b6f96cc44f1d0702faed86b
 
 **온-동네 AI Service**는 플랫폼의 지능형 엔진으로, 사용자의 활동을 실시간으로 검증하고 환경 맞춤형 히든 미션을 생성하는 **자율 동작형 워커(Worker)**입니다. 단순한 API 서버를 넘어, 딥러닝 모델(VLM, Object Detection)과 스케줄러가 결합되어 백엔드와 유기적으로 통신하며 서비스의 신뢰성을 담보합니다.
 
