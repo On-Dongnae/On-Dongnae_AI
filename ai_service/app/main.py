@@ -14,7 +14,16 @@ from fastapi.responses import JSONResponse
 from PIL import Image
 from pydantic import BaseModel
 from .hidden_mission_recommender import recommend_hidden_mission
-app = FastAPI(title="OnDongne AI Service", version="1.0.0")
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    from .scheduler import start_scheduler, shutdown_scheduler
+    start_scheduler()
+    yield
+    shutdown_scheduler()
+
+app = FastAPI(title="OnDongne AI Service", version="1.0.0", lifespan=lifespan)
 
 class DistrictOnlyMissionRequest(BaseModel):
     district_name: str
@@ -410,13 +419,24 @@ async def predict_verification_from_images(
         )
 
 @app.post("/recommend/district-hidden-mission")
-def recommend_district_hidden_mission(req: DistrictOnlyMissionRequest):
-    weather = get_weekly_weather_summary(req.district_name)
+def recommend_district_hidden_mission():
+    weather = get_weekly_weather_summary()
 
     return recommend_one_hidden_mission(
-        district_name=req.district_name,
+        weather_summary=weather["weather_summary"],
+        weekly_condition=weather["weekly_condition"],
         avg_temp=weather["avg_temp"],
         rainy_days=weather["rainy_days"],
         outdoor_friendly_days=weather["outdoor_friendly_days"],
         bad_air_days=weather["bad_air_days"],
     )
+
+@app.post("/test/trigger-hidden-mission")
+def test_trigger_hidden_mission():
+    from .scheduler import generate_and_publish_hidden_mission
+    try:
+        generate_and_publish_hidden_mission()
+        return {"status": "success", "message": "Hidden mission manually triggered"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+

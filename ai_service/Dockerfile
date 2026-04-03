@@ -11,4 +11,4 @@ COPY app ./app
 COPY models ./models
 COPY data ./data
 COPY scripts ./scripts
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8010"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

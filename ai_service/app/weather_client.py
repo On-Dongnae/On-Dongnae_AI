@@ -38,13 +38,13 @@ def get_coords_from_district(district_name: str) -> Dict[str, float]:
     return coords
 
 
-def get_weekly_weather_summary(district_name: str) -> Dict[str, Any]:
+def get_weekly_weather_summary() -> Dict[str, Any]:
     if not OPENWEATHER_API_KEY:
         raise ValueError("OPENWEATHER_API_KEY가 설정되지 않았습니다.")
 
-    coords = get_coords_from_district(district_name)
-    lat = coords["lat"]
-    lon = coords["lon"]
+    # 서울특별시청 기준 좌표 고정
+    lat = 37.5665
+    lon = 126.9780
 
     url = "https://api.openweathermap.org/data/2.5/forecast"
     params = {
@@ -130,13 +130,13 @@ def get_coords_from_district(district_name: str) -> Dict[str, float]:
     return coords
 
 
-def get_weekly_weather_summary(district_name: str) -> Dict[str, Any]:
+def get_weekly_weather_summary() -> Dict[str, Any]:
     if not OPENWEATHER_API_KEY:
         raise ValueError("OPENWEATHER_API_KEY가 설정되지 않았습니다.")
 
-    coords = get_coords_from_district(district_name)
-    lat = coords["lat"]
-    lon = coords["lon"]
+    # 서울특별시청 기준 좌표 고정
+    lat = 37.5665
+    lon = 126.9780
 
     url = "https://api.openweathermap.org/data/2.5/forecast"
     params = {

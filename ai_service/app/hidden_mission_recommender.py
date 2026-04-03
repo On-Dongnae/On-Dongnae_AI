@@ -286,53 +286,39 @@ def recommend_hidden_mission(payload: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def recommend_one_hidden_mission(
-    district_name: str,
+    weather_summary: str,
+    weekly_condition: str,
     avg_temp: float,
     rainy_days: int,
     outdoor_friendly_days: int,
     bad_air_days: int,
 ) -> Dict[str, Any]:
-    approve_model, score_model = load_hidden_models()
-
     season = get_current_season()
-
-    candidates = generate_action_candidates(
+    ctx = HiddenMissionContext(
         season=season,
-        district_name=district_name,
+        region_type="city",
+        weather_summary=weather_summary,
+        weekly_condition=weekly_condition,
         avg_temp=avg_temp,
         rainy_days=rainy_days,
         outdoor_friendly_days=outdoor_friendly_days,
         bad_air_days=bad_air_days,
     )
 
-    df = pd.DataFrame(candidates)
+    candidates = generate_candidates(ctx)
+    ranked = rank_candidates(candidates)
+    top = ranked[0] if ranked else None
 
-    approve_probs = approve_model.predict_proba(df)
-    score_preds = score_model.predict(df)
-
-    if approve_probs.shape[1] >= 2:
-        approve_col = approve_probs[:, 1]
-    else:
-        approve_col = approve_probs[:, 0]
-
-    df["approve_prob"] = [float(x) for x in approve_col]
-    df["predicted_score"] = [float(x) for x in score_preds]
-    df["final_rank_score"] = df["approve_prob"] * 0.6 + (df["predicted_score"] / 5.0) * 0.4
-
-    df = df.sort_values(by="final_rank_score", ascending=False).reset_index(drop=True)
-
-    top = df.iloc[0].to_dict()
-
+    if top:
+        return {
+            "hidden_mission_name": top.get("mission_title", "히든 미션"),
+            "description": top.get("mission_description", "상세 설명이 없습니다."),
+            "predicted_reward_score": int(top.get("predicted_score", 300)),
+            "approve_prob": round(float(top.get("approve_prob", 0.0)), 4)
+        }
     return {
-        "district_name": district_name,
-        "season": season,
-        "recommended_mission": {
-            "mission_title": top["mission_title"],
-            "mission_description": top["mission_description"],
-            "mission_type": top["mission_type"],
-            "approve_prob": round(float(top["approve_prob"]), 4),
-            "predicted_score": round(float(top["predicted_score"]), 4),
-            "final_rank_score": round(float(top["final_rank_score"]), 4),
-        },
-        "candidate_count": int(len(df)),
+        "hidden_mission_name": "기본 히든 미션",
+        "description": "다양한 활동을 통해 포인트를 얻어보세요.",
+        "predicted_reward_score": 300,
+        "approve_prob": 0.0
     }
