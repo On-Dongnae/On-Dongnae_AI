@@ -1,0 +1,24 @@
+{
+  "examples": [
+    {
+      "season": "spring",
+      "region_type": "residential",
+      "weather_summary": "이번 주는 비가 자주 오고 기온은 선선합니다.",
+      "weekly_condition": "rainy",
+      "avg_temp": 14.0,
+      "rainy_days": 4,
+      "outdoor_friendly_days": 2,
+      "bad_air_days": 0
+    },
+    {
+      "season": "summer",
+      "region_type": "park_area",
+      "weather_summary": "이번 주는 맑고 더우며 야외활동이 가능합니다.",
+      "weekly_condition": "outdoor_good",
+      "avg_temp": 29.0,
+      "rainy_days": 0,
+      "outdoor_friendly_days": 6,
+      "bad_air_days": 0
+    }
+  ]
+}
