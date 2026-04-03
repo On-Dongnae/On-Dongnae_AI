@@ -19,25 +19,58 @@
 ## 프로젝트 구조
 
 ```text
-ondongne_ai/
-├─ ai_service/
-│  ├─ app/
-│  ├─ data/
-│  ├─ models/
-│  ├─ scripts/
-│  ├─ Dockerfile
-│  └─ requirements.txt
-├─ backend_module/
-│  └─ src/main/java/com/semo/group1/on_dongnae/
-│     ├─ client/
-│     ├─ config/
-│     ├─ controller/
-│     ├─ dto/
-│     ├─ repository/
-│     └─ service/
-├─ .env
-├─ docker-compose.yml
-└─ README.md
+semo/
+└── ai/
+    ├── ai_service/
+    │   ├── app/
+    │   │   └── main.py
+    │   ├── data/
+    │   │   ├── hidden_mission/
+    │   │   │   └── hidden_mission_candidates.csv
+    │   │   └── verification/
+    │   │       └── verification_final_decision.csv
+    │   ├── models/
+    │   │   ├── hidden_mission_preprocessor.joblib
+    │   │   ├── hidden_mission_approve_clf.joblib
+    │   │   ├── hidden_mission_score_regressor.joblib
+    │   │   └── verification_final_decision_clf.joblib
+    │   ├── scripts/
+    │   │   ├── generate_seed_data.py
+    │   │   ├── train_hidden_mission_ranker.py
+    │   │   └── train_verification_decision_model.py
+    │   ├── Dockerfile
+    │   └── requirements.txt
+    │
+    ├── backend_module/
+    │   └── src/
+    │       └── main/
+    │           └── java/
+    │               └── com/
+    │                   └── semo/
+    │                       └── group1/
+    │                           └── on_dongnae/
+    │                               ├── client/
+    │                               │   └── AiServiceClient.java
+    │                               ├── config/
+    │                               ├── controller/
+    │                               │   ├── MissionAiController.java
+    │                               │   └── MissionVerificationAiController.java
+    │                               ├── dto/
+    │                               │   ├── HiddenMissionAiRequest.java
+    │                               │   ├── HiddenMissionAiResponse.java
+    │                               │   └── VerificationAiResponse.java
+    │                               ├── repository/
+    │                               │   ├── MissionRepository.java
+    │                               │   ├── UserMissionRepository.java
+    │                               │   ├── MissionVerificationRepository.java
+    │                               │   └── VerificationImageRepository.java
+    │                               └── service/
+    │                                   ├── MissionAiService.java
+    │                                   └── MissionVerificationAiService.java
+    │
+    ├── .env
+    ├── docker-compose.yml
+    └── README.md
 ```
 
 ---
@@ -209,5 +242,3 @@ compose 파일은 다음 인프라 컨테이너를 정의합니다.
 - AI 모델 서빙 및 재학습
 - 백엔드와 AI 간 요청/응답 연결
 - 미션 및 인증 관련 도메인 연동
-
-선택된 미션 관련 엔티티 영역에만 AI 기능을 연결하여, 기존 백엔드 프로젝트를 확장하는 용도로 적합합니다.
