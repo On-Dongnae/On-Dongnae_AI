@@ -1,5 +1,7 @@
 from __future__ import annotations
-
+from pydantic import BaseModel
+from .weather_client import get_weekly_weather_summary
+from .hidden_mission_recommender import recommend_one_hidden_mission
 from functools import lru_cache
 from io import BytesIO
 from pathlib import Path
@@ -10,9 +12,12 @@ import pandas as pd
 from fastapi import FastAPI, File, Form, UploadFile
 from fastapi.responses import JSONResponse
 from PIL import Image
-
+from pydantic import BaseModel
+from .hidden_mission_recommender import recommend_hidden_mission
 app = FastAPI(title="OnDongne AI Service", version="1.0.0")
 
+class DistrictOnlyMissionRequest(BaseModel):
+    district_name: str
 
 @app.get("/health")
 def health():
@@ -57,6 +62,15 @@ def get_verification_model():
         raise FileNotFoundError(f"verification model not found: {model_path}")
     return joblib.load(model_path)
 
+class HiddenMissionRecommendRequest(BaseModel):
+    season: str
+    region_type: str
+    weather_summary: str
+    weekly_condition: str
+    avg_temp: float
+    rainy_days: int
+    outdoor_friendly_days: int
+    bad_air_days: int
 
 def safe_open_image(file_bytes: bytes) -> Image.Image:
     return Image.open(BytesIO(file_bytes)).convert("RGB")
@@ -247,7 +261,7 @@ def rule_based_fallback(
 
     score = round(min(score, 0.99), 4)
 
-    if score >= 0.75:
+    if score >= 0.3:
         return "APPROVED", score
     return "REJECTED", score
 
@@ -256,27 +270,33 @@ def predict_final_status(feature_df: pd.DataFrame) -> tuple[str, float]:
     try:
         model = get_verification_model()
 
-        pred = model.predict(feature_df)[0]
+        APPROVED_THRESHOLD = 0.30
 
-        confidence = 0.0
         if hasattr(model, "predict_proba"):
             probs = model.predict_proba(feature_df)[0]
-            confidence = float(max(probs))
-        else:
-            confidence = 0.8
+            classes = [str(c).upper() for c in model.classes_]
 
-        label = str(pred).upper()
+            approved_prob = 0.0
+            if "APPROVED" in classes:
+                approved_idx = classes.index("APPROVED")
+                approved_prob = float(probs[approved_idx])
+                
+            adjusted_score = min(approved_prob * 3, 0.99)
 
-        if label == "APPROVED":
-            return "APPROVED", round(confidence, 4)
-        if label == "NEEDS_REVIEW":
-            return "REJECTED", round(confidence, 4)
-        if label == "REJECTED":
-            return "REJECTED", round(confidence, 4)
+            if adjusted_score >= APPROVED_THRESHOLD:
+                return "APPROVED", round(adjusted_score, 4)
+            else:
+                return "REJECTED", round(adjusted_score, 4)
 
-        return "REJECTED", round(confidence, 4)
+        pred = str(model.predict(feature_df)[0]).upper()
 
-    except Exception:
+        if pred == "APPROVED":
+            return "APPROVED", 0.8
+        return "REJECTED", 0.8
+
+    except Exception as e:
+        print("predict_final_status exception =", e)
+
         row = feature_df.iloc[0].to_dict()
         return rule_based_fallback(
             clip_match_score=float(row["clip_match_score"]),
@@ -290,7 +310,9 @@ def predict_final_status(feature_df: pd.DataFrame) -> tuple[str, float]:
             content=str(row["description_text"]),
         )
 
-
+@app.post("/recommend/hidden-mission")
+def recommend_hidden(req: HiddenMissionRecommendRequest):
+    return recommend_hidden_mission(req.model_dump())
 @app.post("/predict/verification-from-images")
 async def predict_verification_from_images(
     mission_type: str = Form(...),
@@ -386,3 +408,15 @@ async def predict_verification_from_images(
                 "detail": str(e),
             },
         )
+
+@app.post("/recommend/district-hidden-mission")
+def recommend_district_hidden_mission(req: DistrictOnlyMissionRequest):
+    weather = get_weekly_weather_summary(req.district_name)
+
+    return recommend_one_hidden_mission(
+        district_name=req.district_name,
+        avg_temp=weather["avg_temp"],
+        rainy_days=weather["rainy_days"],
+        outdoor_friendly_days=weather["outdoor_friendly_days"],
+        bad_air_days=weather["bad_air_days"],
+    )
